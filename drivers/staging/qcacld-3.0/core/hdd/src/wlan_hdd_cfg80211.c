@@ -262,7 +262,7 @@ static const struct ieee80211_channel hdd_channels_2_4_ghz[] = {
 	HDD2GHZCHAN(2462, 11, 0),
 	HDD2GHZCHAN(2467, 12, 0),
 	HDD2GHZCHAN(2472, 13, 0),
-	HDD2GHZCHAN(2484, 14, 0),
+
 };
 
 static const struct ieee80211_channel hdd_channels_5_ghz[] = {
@@ -1919,7 +1919,7 @@ static int wlan_hdd_set_acs_ch_range(
 		sap_cfg->acs_cfg.start_ch_freq =
 				wlan_reg_ch_to_freq(CHAN_ENUM_2412);
 		sap_cfg->acs_cfg.end_ch_freq =
-				wlan_reg_ch_to_freq(CHAN_ENUM_2484);
+				wlan_reg_ch_to_freq(CHAN_ENUM_2472);
 	} else if (hw_mode == QCA_ACS_MODE_IEEE80211G) {
 		sap_cfg->acs_cfg.hw_mode = eCSR_DOT11_MODE_11g;
 		sap_cfg->acs_cfg.start_ch_freq =
@@ -3983,6 +3983,16 @@ __wlan_hdd_cfg80211_get_features(struct wiphy *wiphy,
 	if (value)
 		wlan_hdd_cfg80211_set_feature(feature_flags,
 					  QCA_WLAN_VENDOR_FEATURE_OCE_STA_CFON);
+
+	value = false;
+	status = ucfg_mlme_get_adaptive11r_enabled(hdd_ctx->psoc, &value);
+	if (QDF_IS_STATUS_ERROR(status))
+		hdd_err("could not get FT-Adaptive 11R info");
+	if (value) {
+		hdd_debug("FT-Adaptive 11R is Enabled");
+		wlan_hdd_cfg80211_set_feature(feature_flags,
+					  QCA_WLAN_VENDOR_FEATURE_ADAPTIVE_11R);
+	}
 
 	ucfg_mlme_get_twt_requestor(hdd_ctx->psoc, &twt_req);
 	ucfg_mlme_get_twt_responder(hdd_ctx->psoc, &twt_res);
@@ -8016,7 +8026,7 @@ static int hdd_config_latency_level(struct hdd_adapter *adapter,
 	QDF_STATUS status;
 
 	if (!hdd_is_wlm_latency_manager_supported(hdd_ctx))
-		return -EINVAL;
+		return -ENOTSUPP;
 
 	latency_level = nla_get_u16(attr);
 	switch (latency_level) {
